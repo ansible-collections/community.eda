@@ -1,0 +1,2 @@
+ansible-core>=2.15
+psycopg[binary,pool]  # extras needed to avoid install failure on macos-aarch64

@@ -130,3 +130,21 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Generated with antsibull-docs
+docs/build/
+docs/rst/*.rst
+docs/temp-rst
+
+# Collection specific
+importer_result.json
+docs/rst/CHANGELOG.md
+CHANGELOG.md
+docs/README.md
+
+# Builds
+*.tar.gz
+
+# Ide's
+.vscode
+.idea

@@ -1,0 +1,291 @@
+---
+# cspell: ignore chelnak
+name: tox
+on:
+  push:
+    branches: ["main"]
+    tags:
+      - "v*.*"
+  pull_request:
+    branches: ["main"]
+  # Run the tox tests every 8 hours.
+  # This will help to identify faster if
+  # there is a CI failure related to a
+  # change in any dependency.
+  schedule:
+    - cron: '0 */8 * * *'
+  # Run on demand
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+env:
+  ANSIBLE_FORCE_COLOR: 1
+  FORCE_COLOR: 1 # tox, pytest
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  PY_COLORS: 1
+
+jobs:
+  prepare:
+    name: prepare
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.generate_matrix.outputs.matrix }}
+    steps:
+      - name: Determine matrix
+        id: generate_matrix
+        uses: coactions/dynamic-matrix@main # v3
+        with:
+          min_python: "3.11"
+          max_python: "3.12"
+          default_python: "3.11"
+          # We run sanity with 3 different versions of ansible as the result
+          # can be different. Each of them is testing with all supported
+          # python versions, regardless the tox pyXY name.
+          other_names: |
+            lint-docs-sanity:tox -e lint;tox -e docs;tox -e py311-sanity-ansible2.17
+        # uncomment the below once we have tests added
+            # tox -e py312-unit;tox -e py312-integration;tox -e coverage
+            # py311:tox -e py311-unit; tox -e py311-integration;tox -e coverage
+            # py312:tox -e py312-unit; tox -e py312-integration;tox -e coverage
+            # py311-linux-arm64:tox -e py311-unit;tox -e py311-integration;tox -e coverage
+            # staging: tox -e py311-staging
+          # ^ arm64 runner is using py311 for matching python version used in AAP 2.5
+          # building docs on macos is needed to avoid diverging behavior
+          platforms: linux,macos,linux-arm64:ubuntu-24.04-arm64-2core
+          skip_explode: "1"
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os || 'ubuntu-24.04' }}
+    continue-on-error: ${{ contains(matrix.name, 'integration') && true || false }}
+    needs:
+      - prepare
+    defaults:
+      run:
+        shell: ${{ matrix.shell || 'bash'}}
+        working-directory: ansible_collections/community/eda
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # needed by setuptools-scm
+          path: ansible_collections/community/eda
+          submodules: true
+
+      - name: Install package dependencies (ubuntu)
+        if: ${{ contains(matrix.os, 'ubuntu') }}
+        run: |
+          sudo apt-get -qq -o Dpkg::Use-Pty=0 remove -y docker-compose
+          sudo apt-get -qq -o Dpkg::Use-Pty=0 update -y --fix-missing
+          sudo apt-get -qq -o Dpkg::Use-Pty=0 --assume-yes --no-install-recommends install -y apt-transport-https curl libsystemd0 libsystemd-dev pkg-config libkrb5-dev krb5-user
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get -qq -o Dpkg::Use-Pty=0 update -y --fix-missing
+          sudo apt-get -qq -o Dpkg::Use-Pty=0 install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin shellcheck
+          # Do not install docker-compose-plugin because it would v1 (broken due to not working with newer requests library)
+          sudo systemctl enable --now docker
+          sudo curl -sL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+      - name: Install Java
+        if: "${{ startsWith(matrix.name, 'py') }}"
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Set pre-commit cache
+        uses: actions/cache@v4
+        if: ${{ contains(matrix.name, 'lint') }}
+        with:
+          path: |
+            ~/.cache/pre-commit
+          key: pre-commit-${{ matrix.name }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Set up Python ${{ matrix.python_version || '3.11' }}
+        uses: actions/setup-python@v5
+        with:
+          cache: pip
+          python-version: ${{ matrix.python_version || '3.11' }}
+          cache-dependency-path: "*requirements*.txt"
+
+      - name: Install tox
+        run: |
+          python3 -m pip install --upgrade pip wheel tox
+
+      - run: ${{ matrix.command }}
+
+      - run: ${{ matrix.command2 }}
+        if: ${{ matrix.command2 }}
+
+      - run: ${{ matrix.command3 }}
+        if: ${{ matrix.command3 }}
+
+      - run: ${{ matrix.command4 }}
+        if: ${{ matrix.command4 }}
+
+      - run: ${{ matrix.command5 }}
+        if: ${{ matrix.command5 }}
+
+      - name: Archive logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.name }}
+          if-no-files-found: error
+          include-hidden-files: true
+          path: |
+            ansible_collections/community/eda/.tox/**/log/
+            ansible_collections/community/eda/.tox/**/coverage.xml
+            ansible_collections/community/eda/tests/output/reports/coverage.xml
+            ansible_collections/community/eda/tests/output/junit/*.xml
+
+      - name: Archive collection archive
+        uses: actions/upload-artifact@v4
+        # we need to do for only one job, 'tox -e docs' when run on linux:
+        if: ${{ matrix.name == 'lint-docs-sanity' }}
+        with:
+          name: collection-artifact
+          if-no-files-found: error
+          include-hidden-files: true
+          path: |
+            ansible_collections/community/eda/*.tar.gz
+
+      - name: Report failure if git reports dirty status
+        run: |
+          if [[ -n $(git status -s) ]]; then
+            # shellcheck disable=SC2016
+            echo -n '::error file=git-status::'
+            printf '### Failed as git reported modified and/or untracked files\n```\n%s\n```\n' "$(git status -s)" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 99
+          fi
+        # https://github.com/actions/toolkit/issues/193
+# TODO: We skip check and publish until we add modules, plugins and tests, uncomment these once those are added
+#   check:
+#     if: always()
+#     environment: check
+#     permissions:
+#       id-token: write
+#       checks: read
+
+#     needs:
+#       - build
+
+#     runs-on: ubuntu-24.04
+
+#     steps:
+#       # checkout needed for codecov action which needs codecov.yml file
+#       - uses: actions/checkout@v4
+
+#       - name: Set up Python # likely needed for coverage
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: "3.12"
+
+#       - run: pip3 install 'coverage>=7.5.1'
+
+#       - name: Merge logs into a single archive
+#         uses: actions/upload-artifact/merge@v4
+#         with:
+#           name: logs
+#           include-hidden-files: true
+#           pattern: logs-*
+#           delete-merged: true
+#           # artifacts like py312.zip and py312-macos do have overlapping files
+#           separate-directories: true
+
+#       - name: Download artifacts
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: logs
+#           path: .
+
+#       - name: Check for expected number of coverage reports
+#         run: .github/check-coverage.sh
+
+#       # Single uploads inside check job for codecov to allow use to retry
+#       # it when it fails without running tests again. Fails often enough!
+#       - name: Upload junit xml reports
+#         # PRs from forks might not have access to the secret
+#         if: env.CODECOV_TOKEN
+#         env:
+#           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || env.CODECOV_TOKEN }}
+#         uses: codecov/test-results-action@v1
+#         with:
+#           name: ${{ matrix.name }}
+#           files: "*/tests/output/junit/*.xml"
+#           fail_ci_if_error: true
+#           token: ${{ secrets.CODECOV_TOKEN }}
+
+#       - name: Upload coverage data
+#         uses: codecov/codecov-action@v4.5.0
+#         with:
+#           name: ${{ matrix.name }}
+#           # verbose: true # optional (default = false)
+#           fail_ci_if_error: true
+#           use_oidc: true # cspell:ignore oidc
+#           files: "*/tests/output/reports/coverage.xml"
+
+#       # - name: Check codecov.io status
+#       #   if: github.event_name == 'pull_request'
+#       #   uses: coactions/codecov-status@main
+
+#       - name: Decide whether the needed jobs succeeded or failed
+#         uses: re-actors/alls-green@release/v1
+#         with:
+#           jobs: ${{ toJSON(needs) }}
+
+#   publish:
+#     runs-on: ubuntu-24.04
+#     needs:
+#       - check
+#     environment: release
+#     if: github.event_name == 'push' && github.ref_type == 'tag'
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Download the artifact
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: collection-artifact
+
+#       - name: Set tarball as environment variable
+#         id: set_tarball
+#         run: echo "TARBALL=$(ls -1 ./*.tar.gz)" >> $GITHUB_ENV
+
+#       - name: Setup python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: "3.12"
+
+#       - run: pip install ansible-core
+
+#       - name: Publish the collection on Galaxy
+#         run: >
+#           [[ "${{ secrets.ANSIBLE_GALAXY_API_KEY != '' }}" ]] || { echo
+#           "ANSIBLE_GALAXY_API_KEY is required to publish on galaxy" ; exit 1; }
+
+#           ansible-galaxy collection publish "${{ env.TARBALL }}" --api-key "${{
+#           secrets.ANSIBLE_GALAXY_API_KEY }}"
+
+#       - name: Upload the artifact to the release
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#         run: |
+#           TAG_NAME=$(echo ${{ github.ref }} | sed 's/refs\/tags\///')
+
+#           # Check if a release exists for the current tag
+#           RELEASE_EXISTS=$(gh release view $TAG_NAME --json id --jq '.id' || echo "no_release")
+
+#           # If a release exists, upload the artifact
+#           if [ "$RELEASE_EXISTS" != "no_release" ]; then
+#             echo "Release found for tag $TAG_NAME. Uploading artifact."
+#             gh release upload $TAG_NAME "${{ env.TARBALL }}"
+#           else
+#             echo "No release found for tag $TAG_NAME. Skipping artifact upload."
+#           fi
