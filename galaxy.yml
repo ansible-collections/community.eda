@@ -23,4 +23,45 @@ issues: https://github.com/ansible-collections/community.eda/issues
 build_ignore:
 # https://docs.ansible.com/ansible/devel/dev_guide/developing_collections_distributing.html#ignoring-files-and-folders
   - .gitignore
+  - .pre-commit-config.yaml
+  - "*.tar.gz"
+  - .ansible
+  - .benchmarks
+  - .config
+  - .github
+  - .gitleaks.toml
+  - .idea
+  - .mypy_cache
+  - .pre-commit-config.yaml
+  - .pytest_cache
+  - .readthedocs.yaml
+  - .ruff_cache
+  - .tool-versions
+  - .tox
+  - .venv
+  - .vscode
+  - CHANGELOG.md
+  - ansible_collections
   - changelogs/.plugin-cache.yaml
+  - codecov.yml
+  - collections
+  - cspell.config.yaml
+  - demos
+  - docs/.changelog.yml
+  - docs/.gitignore
+  - docs/antsibull-docs.cfg
+  - docs/build
+  - docs/build.sh
+  - docs/conf.py
+  - docs/docsite
+  - docs/rst
+  - docs/temp-rst
+  - pyproject.toml
+  - run_pytest.yml
+  - start_app.yml
+  - tests/conftest.py
+  - tests/integration/*
+  - tests/run-staging
+  - tests/unit
+  - tox.ini
+  - venv
