@@ -9,6 +9,15 @@ CONTRIBUTING.md
 docs/
 docs/CHANGELOG.md
 docs/README.md
+extensions/
+extensions/eda/
+extensions/eda/plugins/
+extensions/eda/plugins/event_filter/
+extensions/eda/plugins/event_filter/README.md
+extensions/eda/plugins/event_filter/__init__.py
+extensions/eda/plugins/event_source/
+extensions/eda/plugins/event_source/README.md
+extensions/eda/plugins/event_source/__init__.py
 FILES.json
 LICENSE
 MAINTAINERS
