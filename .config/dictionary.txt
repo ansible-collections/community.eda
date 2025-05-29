@@ -3,6 +3,7 @@
 ARGSPEC
 AUTHS
 Abhijeet
+Alex-Izquierdo
 Connor
 Doston
 Dostonbek
@@ -51,6 +52,7 @@ httpapi
 ipynb
 items2dict
 jaas
+kaiokmo
 keygen
 keypass
 keytool
@@ -67,6 +69,7 @@ noprompt
 nosetests
 parseable
 posargs
+ptoscano
 pyflow
 pypa
 pypackages
