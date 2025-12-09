@@ -72,7 +72,7 @@ jobs:
       matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # needed by setuptools-scm
           path: ansible_collections/community/eda
@@ -96,7 +96,7 @@ jobs:
 
       - name: Install Java
         if: "${{ startsWith(matrix.name, 'py') }}"
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: "zulu"
           java-version: "17"
@@ -110,7 +110,7 @@ jobs:
           key: pre-commit-${{ matrix.name }}-${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: Set up Python ${{ matrix.python_version || '3.11' }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           cache: pip
           python-version: ${{ matrix.python_version || '3.11' }}
@@ -135,7 +135,7 @@ jobs:
         if: ${{ matrix.command5 }}
 
       - name: Archive logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: ${{ matrix.name != 'lint' }}
         with:
           name: logs-${{ matrix.name }}
@@ -147,7 +147,7 @@ jobs:
             ansible_collections/community/eda/tests/output/junit/*.xml
 
       - name: Archive collection archive
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         # we need to do for only one job, 'tox -e docs' when run on linux:
         if: ${{ matrix.name == 'docs-sanity' }}
         with:
@@ -181,10 +181,10 @@ jobs:
 
 #     steps:
 #       # checkout needed for codecov action which needs codecov.yml file
-#       - uses: actions/checkout@v4
+#       - uses: actions/checkout@v6
 
 #       - name: Set up Python # likely needed for coverage
-#         uses: actions/setup-python@v5
+#         uses: actions/setup-python@v6
 #         with:
 #           python-version: "3.12"
 
@@ -248,7 +248,7 @@ jobs:
 #     environment: release
 #     if: github.event_name == 'push' && github.ref_type == 'tag'
 #     steps:
-#       - uses: actions/checkout@v4
+#       - uses: actions/checkout@v6
 
 #       - name: Download the artifact
 #         uses: actions/download-artifact@v4
@@ -260,7 +260,7 @@ jobs:
 #         run: echo "TARBALL=$(ls -1 ./*.tar.gz)" >> $GITHUB_ENV
 
 #       - name: Setup python
-#         uses: actions/setup-python@v5
+#         uses: actions/setup-python@v6
 #         with:
 #           python-version: "3.12"
 
