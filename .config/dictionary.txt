@@ -14,8 +14,10 @@ Libera
 OAUTHBEARER
 PYTHONUNBUFFERED
 Passw
+Pino
 Spyder
 Toirov
+Toscano
 antsibull
 auths
 basepython
