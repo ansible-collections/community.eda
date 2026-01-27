@@ -4,6 +4,7 @@ changelogs/changelog.yaml
 changelogs/config.yaml
 changelogs/fragments/
 changelogs/fragments/.keep
+changelogs/fragments/extensions-yml.yml
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
 docs/
@@ -38,6 +39,7 @@ meta/
 meta/ee-bindep.txt
 meta/ee-requirements.txt
 meta/execution-environment.yml
+meta/extensions.yml
 meta/runtime.yml
 README.md
 requirements.txt
