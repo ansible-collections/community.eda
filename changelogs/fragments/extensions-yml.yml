@@ -1,3 +1,0 @@
----
-bugfixes:
-  - Include ``meta/extensions.yml``, so EDA plugins are imported by ``galaxy-importer``.
