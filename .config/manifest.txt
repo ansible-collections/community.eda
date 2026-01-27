@@ -4,6 +4,7 @@ changelogs/changelog.yaml
 changelogs/config.yaml
 changelogs/fragments/
 changelogs/fragments/.keep
+changelogs/fragments/0.1.1.yml
 changelogs/fragments/extensions-yml.yml
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
