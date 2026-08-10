@@ -58,10 +58,8 @@ explicit_package_bases = true
 [[tool.mypy.overrides]]
 module = [
   # Dependencies not following pep-561 yet:
-  "aiokafka.*", # https://github.com/aio-libs/aiokafka/issues/980
   "ansible.*", # https://github.com/ansible/ansible/issues/83801
   "asyncmock", # https://github.com/timsavage/asyncmock/issues/8
-  "kafka.*", # https://github.com/dpkp/kafka-python/issues/2446
 ]
 ignore_missing_imports = true
 
