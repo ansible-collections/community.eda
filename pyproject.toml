@@ -49,7 +49,7 @@ disallow_untyped_defs = true
 warn_unused_configs = true
 
 # site-packages is here to help vscode mypy integration getting confused
-exclude = "(build|dist|test/local-content|site-packages|~/.pyenv|examples/playbooks/collections|plugins/modules)"
+exclude = "(build|dist|test/local-content|site-packages|~/.pyenv)"
 # https://github.com/python/mypy/issues/12664
 incremental = false
 namespace_packages = true
@@ -65,26 +65,21 @@ ignore_missing_imports = true
 
 [tool.pylint.MASTER]
 # Temporary ignore until we are able to address issues on these:
-ignore-paths = "^(demos/dynatrace-demo/fake_app.py|tests/|plugins/modules).*$"
+ignore-paths = "^(tests/).*$"
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
   "duplicate-code",
   "pointless-string-statement",
   "too-few-public-methods",
-  "too-many-instance-attributes",
   "missing-module-docstring",
-  "missing-class-docstring",
   "missing-function-docstring",
-  "too-many-arguments",
-  "too-many-branches",
-  "inconsistent-return-statements",
   "invalid-name",
 ]
 max-line-length=120
 
 [tool.ruff.lint]
-ignore = [ "E402" ]
+ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 # Files created few years ago in ansible.eda
