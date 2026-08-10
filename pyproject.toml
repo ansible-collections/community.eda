@@ -88,6 +88,13 @@ max-line-length=120
 [tool.ruff.lint]
 ignore = [ "E402" ]
 
+[tool.ruff.lint.per-file-ignores]
+# Files created few years ago in ansible.eda
+"extensions/eda/plugins/event_source/file.py" = ["CPY001"]
+"extensions/eda/plugins/event_source/file_watch.py" = ["CPY001"]
+"extensions/eda/plugins/event_source/journald.py" = ["CPY001"]
+"extensions/eda/plugins/event_source/url_check.py" = ["CPY001"]
+
 [tool.ruff.lint.flake8-copyright]
 # Do not enforce copyright notices for empty files
 min-file-size = 1
