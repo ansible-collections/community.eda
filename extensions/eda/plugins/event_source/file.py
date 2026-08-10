@@ -1,6 +1,6 @@
 import pathlib
 from asyncio import Queue
-from typing import Any, Union
+from typing import Any
 
 import yaml
 from watchdog.events import FileSystemEvent, RegexMatchingEventHandler
@@ -27,7 +27,7 @@ EXAMPLES = r"""
 """
 
 
-def send_facts(queue: Queue[Any], filename: Union[str, bytes]) -> None:
+def send_facts(queue: Queue[Any], filename: str | bytes) -> None:
     """Send facts to the queue."""
     if isinstance(filename, bytes):
         filename = str(filename, "utf-8")
