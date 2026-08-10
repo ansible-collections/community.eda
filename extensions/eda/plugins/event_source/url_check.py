@@ -7,7 +7,8 @@ DOCUMENTATION = r"""
 ---
 short_description: Poll a set of URLs and sends events with their status.
 description:
-  - An ansible-rulebook event source plugin that polls a set of URLs and sends events with their status.
+  - An ansible-rulebook event source plugin that polls a set of URLs and sends
+    events with their status.
 options:
   urls:
     description:
